@@ -31,3 +31,35 @@ where Message: Send {
         self.sender.send(message)
     }
 }
+
+pub struct ConsumerGroup<Message> {
+    consumer_handles: Vec<ConsumerHandle<Message>>,
+    last_sent: usize,
+}
+
+impl<Message> ConsumerGroup<Message>
+where Message: Send {
+    pub fn build<F>(behavior: F, n_workers: usize) -> std::io::Result<Self>
+    where F: std::ops::Fn(Message) -> std::io::Result<()>,
+          F: Send,
+          F: Sync,
+          F: 'static,
+          F: Copy,
+          Message: 'static {
+        let consumer_handles: Vec<ConsumerHandle<Message>> = (1..n_workers).map(|x| {
+            ConsumerHandle::build(behavior)
+        }).collect::<std::io::Result<Vec<ConsumerHandle<Message>>>>()?;
+        Ok(ConsumerGroup
+        { consumer_handles
+        , last_sent: 0
+        }
+        )
+    }
+
+    pub fn send(&mut self, message: Message) -> std::result::Result<(), std::sync::mpsc::SendError<Message>> {
+        let n = self.consumer_handles.len();
+        let consumer_handle = &mut self.consumer_handles[self.last_sent];
+        self.last_sent = (self.last_sent + 1) % n;
+        consumer_handle.send(message)
+    }
+}

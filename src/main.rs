@@ -3,7 +3,7 @@ mod producer;
 mod consumer;
 
 use producer::Producer;
-use consumer::ConsumerHandle;
+use consumer::ConsumerGroup;
 
 fn from_utf8(buffer: &[u8]) -> Option<String> {
     let os = std::str::from_utf8(buffer);
@@ -19,13 +19,13 @@ fn main() -> ! {
         Producer::build(("127.0.0.1", 9018 as u16), sender, from_utf8).expect("Couldn't make producer");
     // test channel client
     std::thread::spawn(move || {
-        let mut consumer_handle = ConsumerHandle::build(|x: String| {
+        let mut consumer_group = ConsumerGroup::build(|x: String| {
             println!("Message received: {:?}", x);
             Ok(())
-        }).expect("tried to build a consumer");
+        }, 12).expect("tried to build a consumer");
         loop {
             let s = receiver.recv().unwrap();
-            if let Err(err) = consumer_handle.send(s.1) {
+            if let Err(err) = consumer_group.send(s.1) {
                 println!("Error sending to consumer: {:?}", err);
             }
         }
