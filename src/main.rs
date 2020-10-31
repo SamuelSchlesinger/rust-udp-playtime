@@ -40,9 +40,15 @@ fn main() -> ! {
             if let Err(err) = socket.send(format!("{}", n).as_bytes()) {
                 println!("Error sending bytes: {:?}", err);
             }
+            std::thread::yield_now();
             let m = cc.load(std::sync::atomic::Ordering::SeqCst);
-            if n % 10000 == 0 {
-                println!("Send number {}, receive number {}, difference {}", n, m, n - m);
+            if n % 100 == 0 {
+                println!(
+                    "Sent: {}, Received: {}, Sent - Received: {}",
+                    n,
+                    m,
+                    n - m
+                );
             }
         }
     });
