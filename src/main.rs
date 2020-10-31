@@ -20,6 +20,9 @@ fn main() -> ! {
         move |x: (std::net::SocketAddr, String),
               env: &mut std::sync::Arc<std::sync::atomic::AtomicUsize>| {
             let e = env.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            if e % 10000 == 0 {
+                println!("{}", e);
+            }
             Ok(())
         },
     );
