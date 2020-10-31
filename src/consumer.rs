@@ -70,7 +70,7 @@ where
         Message: 'static,
         Environment: 'static,
     {
-        let consumer_handles: Vec<ConsumerHandle<Message, Environment>> = (1..n_workers)
+        let consumer_handles: Vec<ConsumerHandle<Message, Environment>> = (0..n_workers)
             .map(|_| ConsumerHandle::build(behavior.clone(), environment.clone()))
             .collect::<std::io::Result<Vec<ConsumerHandle<Message, Environment>>>>()?;
         Ok(ConsumerGroup {

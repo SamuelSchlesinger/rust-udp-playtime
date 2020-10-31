@@ -1,13 +1,13 @@
 use super::consumer::ConsumerGroup;
 use super::listener::Listener;
 
-pub struct Producer<Message, Environment> {
+pub struct Producer<Message, Environment, const N: usize> {
     consumer_group: ConsumerGroup<(std::net::SocketAddr, Message), Environment>,
     transformation: fn(&[u8]) -> Option<Message>,
-    listener: Listener,
+    listener: Listener<N>,
 }
 
-impl<Message, Environment> Producer<Message, Environment>
+impl<Message, Environment, const N: usize> Producer<Message, Environment, N>
 where
     Message: Send,
     Environment: Send,

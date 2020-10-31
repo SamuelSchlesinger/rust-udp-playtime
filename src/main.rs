@@ -1,3 +1,5 @@
+#![feature(const_generics)]
+
 mod consumer;
 mod listener;
 mod producer;
@@ -26,9 +28,9 @@ fn main() -> ! {
             Ok(())
         },
     );
-    let consumer_group = ConsumerGroup::build(behavior.clone(), &consumer_counter, 15)
+    let consumer_group = ConsumerGroup::build(behavior.clone(), &consumer_counter, 1)
         .expect("tried to build a consumer");
-    let mut producer = Producer::build(("127.0.0.1", 9018 as u16), consumer_group, from_utf8)
+    let mut producer: Producer<String, Arc<AtomicUsize>, 4096> = Producer::build(("127.0.0.1", 9018 as u16), consumer_group, from_utf8)
         .expect("Couldn't make producer");
     // test udp client
     std::thread::spawn(move || {

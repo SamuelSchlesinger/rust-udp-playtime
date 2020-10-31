@@ -1,10 +1,10 @@
-pub struct Listener {
-    buffer: [u8; 4096],
+pub struct Listener<const N: usize> {
+    buffer: [u8; N],
     socket: std::net::UdpSocket,
     recv_from_response: Option<(usize, std::net::SocketAddr)>,
 }
 
-impl Listener {
+impl<const N: usize> Listener<N> {
     pub fn build<A>(addr: A) -> std::io::Result<Self>
     where
         A: std::net::ToSocketAddrs,
@@ -12,7 +12,7 @@ impl Listener {
         let socket = std::net::UdpSocket::bind(addr)?;
         Ok(Listener {
             socket,
-            buffer: [0; 4096],
+            buffer: [0; N],
             recv_from_response: None,
         })
     }
@@ -22,7 +22,7 @@ impl Listener {
         Ok(())
     }
 
-    pub fn buffer(&self) -> &[u8; 4096] {
+    pub fn buffer(&self) -> &[u8; N] {
         &self.buffer
     }
 
