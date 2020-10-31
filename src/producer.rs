@@ -1,15 +1,17 @@
 use super::listener::Listener;
+use super::consumer::ConsumerGroup;
 
 pub struct Producer<Message> {
-    channel: std::sync::mpsc::SyncSender<(std::net::SocketAddr, Message)>,
+    consumer_group: ConsumerGroup<(std::net::SocketAddr, Message)>,
     transformation: fn(&[u8]) -> Option<Message>,
     listener: Listener,
 }
 
-impl<Message> Producer<Message> {
+impl<Message> Producer<Message>
+where Message: Send {
     pub fn build<A>(
         addr: A,
-        channel: std::sync::mpsc::SyncSender<(std::net::SocketAddr, Message)>,
+        consumer_group: ConsumerGroup<(std::net::SocketAddr, Message)>,
         transformation: fn(&[u8]) -> Option<Message>,
     ) -> std::io::Result<Self>
     where
@@ -17,7 +19,7 @@ impl<Message> Producer<Message> {
     {
         let listener = Listener::build(addr)?;
         Ok(Producer {
-            channel,
+            consumer_group,
             transformation,
             listener,
         })
@@ -32,7 +34,7 @@ impl<Message> Producer<Message> {
                         if let Some(message) =
                             (self.transformation)(&self.listener.buffer()[..bytes_read])
                         {
-                            if let Err(err) = self.channel.send((from_addr, message)) {
+                            if let Err(err) = self.consumer_group.send((from_addr, message)) {
                                 println!("Error sending message through channel: {:?}", err);
                             }
                         }

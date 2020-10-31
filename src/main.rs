@@ -14,23 +14,12 @@ fn from_utf8(buffer: &[u8]) -> Option<String> {
 }
 
 fn main() -> ! {
-    let (sender, receiver) = std::sync::mpsc::sync_channel(4096);
+    let mut consumer_group = ConsumerGroup::build(|x: (std::net::SocketAddr, String)| {
+        println!("Message received: {:?}", x.1);
+        Ok(())
+    }, 12).expect("tried to build a consumer");
     let mut producer =
-        Producer::build(("127.0.0.1", 9018 as u16), sender, from_utf8).expect("Couldn't make producer");
-    // test channel client
-    std::thread::spawn(move || {
-        let mut consumer_group = ConsumerGroup::build(|x: String| {
-            println!("Message received: {:?}", x);
-            Ok(())
-        }, 12).expect("tried to build a consumer");
-        loop {
-            let s = receiver.recv().unwrap();
-            if let Err(err) = consumer_group.send(s.1) {
-                println!("Error sending to consumer: {:?}", err);
-            }
-        }
-    }
-    );
+        Producer::build(("127.0.0.1", 9018 as u16), consumer_group, from_utf8).expect("Couldn't make producer");
     // test udp client
     std::thread::spawn(|| {
         let mut n = 0;
