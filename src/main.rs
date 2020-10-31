@@ -1,16 +1,15 @@
 mod listener;
 mod producer;
+mod consumer;
 
 use producer::Producer;
+use consumer::ConsumerHandle;
 
-fn from_utf8(buffer: &[u8]) -> std::io::Result<String> {
+fn from_utf8(buffer: &[u8]) -> Option<String> {
     let os = std::str::from_utf8(buffer);
     match os {
-        Err(_) => Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "utf8 parsing error",
-        )),
-        Ok(s) => Ok(String::from(s)),
+        Err(_) => None,
+        Ok(s) => Some(String::from(s)),
     }
 }
 
@@ -19,10 +18,19 @@ fn main() -> ! {
     let mut producer =
         Producer::build(("127.0.0.1", 9018 as u16), sender, from_utf8).expect("Couldn't make producer");
     // test channel client
-    std::thread::spawn(move || loop {
-        let _s = receiver.recv().unwrap();
-        // println!("Message received: {:?}", s);
-    });
+    std::thread::spawn(move || {
+        let mut consumer_handle = ConsumerHandle::build(|x: String| {
+            println!("Message received: {:?}", x);
+            Ok(())
+        }).expect("tried to build a consumer");
+        loop {
+            let s = receiver.recv().unwrap();
+            if let Err(err) = consumer_handle.send(s.1) {
+                println!("Error sending to consumer: {:?}", err);
+            }
+        }
+    }
+    );
     // test udp client
     std::thread::spawn(|| {
         let mut n = 0;
@@ -36,9 +44,7 @@ fn main() -> ! {
             if let Err(err) = socket.send(&[66, 67, 68]) {
                 println!("Error sending bytes: {:?}", err);
             }
-            if n % 100000 == 0 {
-                println!("Send number {}", n);
-            }
+            println!("Send number {}", n);
         }
     });
     // pump out translated UDP requests into the channel

@@ -1,9 +1,7 @@
-use std::net::SocketAddr;
-
 pub struct Listener {
     buffer: [u8; 4096],
     socket: std::net::UdpSocket,
-    recv_from_response: Option<(usize, SocketAddr)>,
+    recv_from_response: Option<(usize, std::net::SocketAddr)>,
 }
 
 impl Listener {
@@ -26,7 +24,7 @@ impl Listener {
         &self.buffer
     }
 
-    pub fn recv_from_response(&self) -> Option<(usize, SocketAddr)> {
+    pub fn recv_from_response(&self) -> Option<(usize, std::net::SocketAddr)> {
         self.recv_from_response
     }
 }
