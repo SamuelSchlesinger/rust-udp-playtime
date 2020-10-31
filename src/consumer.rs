@@ -1,8 +1,3 @@
-pub struct Consumer<Message> {
-    receiver: std::sync::mpsc::Receiver<Message>,
-    behavior: fn(&mut Message) -> std::io::Result<()>,
-}
-
 pub struct ConsumerHandle<Message> {
     sender: std::sync::mpsc::SyncSender<Message>,
     join_handle: std::thread::JoinHandle<Message>,
@@ -18,7 +13,11 @@ where Message: Send {
           Message: 'static {
         let (sender, receiver) = std::sync::mpsc::sync_channel(4096);
         let join_handle = std::thread::spawn(move || loop {
-            if let Ok(message) = receiver.recv() { behavior(message); }
+            if let Ok(message) = receiver.recv() {
+                if let Err(err) = behavior(message) {
+                    println!("Received error: {:?}", err);
+                }
+            }
         });
         Ok(ConsumerHandle {
             sender,
@@ -29,6 +28,10 @@ where Message: Send {
 
     pub fn send(&mut self, message: Message) -> std::result::Result<(), std::sync::mpsc::SendError<Message>> {
         self.sender.send(message)
+    }
+
+    pub fn join_handle(self) -> std::thread::JoinHandle<Message> {
+        self.join_handle
     }
 }
 
@@ -46,7 +49,7 @@ where Message: Send {
           F: 'static,
           F: Copy,
           Message: 'static {
-        let consumer_handles: Vec<ConsumerHandle<Message>> = (1..n_workers).map(|x| {
+        let consumer_handles: Vec<ConsumerHandle<Message>> = (1..n_workers).map(|_| {
             ConsumerHandle::build(behavior)
         }).collect::<std::io::Result<Vec<ConsumerHandle<Message>>>>()?;
         Ok(ConsumerGroup

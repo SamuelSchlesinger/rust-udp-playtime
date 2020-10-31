@@ -14,7 +14,7 @@ fn from_utf8(buffer: &[u8]) -> Option<String> {
 }
 
 fn main() -> ! {
-    let mut consumer_group = ConsumerGroup::build(|x: (std::net::SocketAddr, String)| {
+    let consumer_group = ConsumerGroup::build(|x: (std::net::SocketAddr, String)| {
         println!("Message received: {:?}", x.1);
         Ok(())
     }, 12).expect("tried to build a consumer");
