@@ -15,11 +15,11 @@ fn from_utf8(buffer: &[u8]) -> Option<String> {
 fn main() -> ! {
     use std::sync::{atomic::AtomicUsize, Arc};
     let consumer_counter = Arc::new(AtomicUsize::new(0));
+    let cc = consumer_counter.clone();
     let behavior = Arc::new(
         move |x: (std::net::SocketAddr, String),
               env: &mut std::sync::Arc<std::sync::atomic::AtomicUsize>| {
             let e = env.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            println!("{}th message received: {:?}", e, x.1);
             Ok(())
         },
     );
@@ -28,7 +28,7 @@ fn main() -> ! {
     let mut producer = Producer::build(("127.0.0.1", 9018 as u16), consumer_group, from_utf8)
         .expect("Couldn't make producer");
     // test udp client
-    std::thread::spawn(|| {
+    std::thread::spawn(move || {
         let mut n = 0;
         let socket =
             std::net::UdpSocket::bind("127.0.0.1:9019").expect("could not bind to the address");
@@ -40,8 +40,10 @@ fn main() -> ! {
             if let Err(err) = socket.send(format!("{}", n).as_bytes()) {
                 println!("Error sending bytes: {:?}", err);
             }
-            println!("Send number {}", n);
-            std::thread::sleep(std::time::Duration::from_millis(1));
+            let m = cc.load(std::sync::atomic::Ordering::SeqCst);
+            if n % 10000 == 0 {
+                println!("Send number {}, receive number {}, difference {}", n, m, n - m);
+            }
         }
     });
     // pump out translated UDP requests into the channel
