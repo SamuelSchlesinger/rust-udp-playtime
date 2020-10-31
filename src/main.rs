@@ -23,7 +23,7 @@ fn main() -> ! {
             Ok(())
         },
     );
-    let consumer_group = ConsumerGroup::build(behavior.clone(), &consumer_counter, 12)
+    let consumer_group = ConsumerGroup::build(behavior.clone(), &consumer_counter, 15)
         .expect("tried to build a consumer");
     let mut producer = Producer::build(("127.0.0.1", 9018 as u16), consumer_group, from_utf8)
         .expect("Couldn't make producer");
@@ -42,7 +42,7 @@ fn main() -> ! {
             }
             std::thread::yield_now();
             let m = cc.load(std::sync::atomic::Ordering::SeqCst);
-            if n % 100 == 0 {
+            if n % 10000 == 0 {
                 println!(
                     "Sent: {}, Received: {}, Sent - Received: {}",
                     n,
