@@ -6,7 +6,9 @@ pub struct Listener {
 
 impl Listener {
     pub fn build<A>(addr: A) -> std::io::Result<Self>
-    where A: std::net::ToSocketAddrs {
+    where
+        A: std::net::ToSocketAddrs,
+    {
         let socket = std::net::UdpSocket::bind(addr)?;
         Ok(Listener {
             socket,

@@ -1,17 +1,20 @@
-use super::listener::Listener;
 use super::consumer::ConsumerGroup;
+use super::listener::Listener;
 
-pub struct Producer<Message> {
-    consumer_group: ConsumerGroup<(std::net::SocketAddr, Message)>,
+pub struct Producer<Message, Environment> {
+    consumer_group: ConsumerGroup<(std::net::SocketAddr, Message), Environment>,
     transformation: fn(&[u8]) -> Option<Message>,
     listener: Listener,
 }
 
-impl<Message> Producer<Message>
-where Message: Send {
+impl<Message, Environment> Producer<Message, Environment>
+where
+    Message: Send,
+    Environment: Send,
+{
     pub fn build<A>(
         addr: A,
-        consumer_group: ConsumerGroup<(std::net::SocketAddr, Message)>,
+        consumer_group: ConsumerGroup<(std::net::SocketAddr, Message), Environment>,
         transformation: fn(&[u8]) -> Option<Message>,
     ) -> std::io::Result<Self>
     where
