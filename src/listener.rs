@@ -1,21 +1,24 @@
+use std::net::SocketAddr;
+
 pub struct Listener {
     buffer: [u8; 4096],
     socket: std::net::UdpSocket,
-    bytes_read: Option<usize>,
+    recv_from_response: Option<(usize, SocketAddr)>,
 }
 
 impl Listener {
-    pub fn new(host: &'_ str, port: u16) -> std::io::Result<Self> {
-        let socket = std::net::UdpSocket::bind((host, port))?;
+    pub fn build<A>(addr: A) -> std::io::Result<Self>
+    where A: std::net::ToSocketAddrs {
+        let socket = std::net::UdpSocket::bind(addr)?;
         Ok(Listener {
             socket,
             buffer: [0; 4096],
-            bytes_read: None,
+            recv_from_response: None,
         })
     }
 
     pub fn recv_next(&mut self) -> std::io::Result<()> {
-        self.bytes_read = Some(self.socket.recv(&mut self.buffer)?);
+        self.recv_from_response = Some(self.socket.recv_from(&mut self.buffer)?);
         Ok(())
     }
 
@@ -23,7 +26,7 @@ impl Listener {
         &self.buffer
     }
 
-    pub fn bytes_read(&self) -> Option<usize> {
-        self.bytes_read
+    pub fn recv_from_response(&self) -> Option<(usize, SocketAddr)> {
+        self.recv_from_response
     }
 }
